@@ -1,13 +1,11 @@
 package ru.mikhaildruzhinin.usermanagement
 
-import io.circe.Decoder
+import io.circe._
 import io.circe.generic.auto._
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ru.mikhaildruzhinin.usermanagement.Endpoints._
-import ru.mikhaildruzhinin.usermanagement.Library._
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.client3.testing.SttpBackendStub
@@ -27,44 +25,59 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
       .backend()
   }
 
+  /**
+   * @tparam A successful response model
+   */
   // @formatter:off
-  private def sendRequest[A](method: Method, uri: String,
-                             backend: SttpBackend[Future, WebSockets])
-                            (implicit decoder: Decoder[A]) = {
+  private def sendRequest[A](method: Method,
+                             uri: String)
+                            (implicit decoder: Decoder[A],
+                             endpoint: ServerEndpoint[Any, Future]) = {
 
     basicRequest
-      .method(method, uri"$baseUriStub/${uri.split("/").toSeq}")
+      .method(method, uri"$baseUriStub/${getPathSegments(uri)}")
       .response(asJson[A])
-      .send(backend)
+      .send(backendStub(endpoint))
+  }
+
+  /**
+   * @tparam A request body model
+   * @tparam B successful response model
+   */
+  private def sendRequest[A, B](method: Method, uri: String, body: A)
+                               (implicit encoder: Encoder[A],
+                                decoder: Decoder[B],
+                                endpoint: ServerEndpoint[Any, Future]) = {
+
+    basicRequest
+      .method(method, uri"$baseUriStub/${getPathSegments(uri)}")
+      .body[A](body)
+      .response(asJson[B])
+      .send(backendStub(endpoint))
   }
   // @formatter:on
 
-  it should "return hello message" in {
-    val endpoint = helloServerEndpoint
-    // given
-    val backend: SttpBackend[Future, WebSockets] = backendStub(endpoint)
-
-    // when
-    val response = basicRequest
-      .get(uri"$baseUriStub/hello?name=adam")
-      .send(backend)
-
-    // then
-    response.map(_.body.value shouldBe "Hello adam")
+  private def getPathSegments(uri: String): Seq[String] = {
+    uri.split("/").toSeq match {
+      case x@_ if x.headOption.contains("") => x.tail
+      case x@_ => x
+    }
   }
 
-  it should "list available books" in {
-    // given
-    val endpoint = booksListingServerEndpoint
+    it should "register" in {
 
-    // when
-    val response = sendRequest[Seq[Book]](
-      method = Method.GET,
-      uri = "books/list/all",
-      backend = backendStub(endpoint)
-    )
+      // given
+      implicit val endpoint: ServerEndpoint[Any, Future] = registerEndpoint
+      val body = UserBody("admin", "admin")
 
-    // then
-    response.map(_.body.value shouldBe books)
-  }
+      // when
+      val response = sendRequest[UserBody, UserDto](
+        method = Method.POST,
+        uri = "register",
+        body = body
+      )
+
+      // then
+      response.map(_.body.value shouldBe UserDto("admin", "admin"))
+    }
 }
