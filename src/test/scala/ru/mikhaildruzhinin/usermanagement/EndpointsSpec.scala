@@ -3,6 +3,8 @@ package ru.mikhaildruzhinin.usermanagement
 import io.circe._
 import io.circe.generic.auto._
 import org.scalatest.EitherValues
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ru.mikhaildruzhinin.usermanagement.Endpoints._
@@ -64,20 +66,54 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
     }
   }
 
-    it should "register" in {
+  it should "register" in {
 
-      // given
-      implicit val endpoint: ServerEndpoint[Any, Future] = registerEndpoint
-      val body = UserBody("admin", "admin")
+    // given
+    implicit val endpoint: ServerEndpoint[Any, Future] = registerEndpoint
+    val body = UserBody("admin", "admin")
 
-      // when
-      val response = sendRequest[UserBody, UserDto](
-        method = Method.POST,
-        uri = "register",
-        body = body
-      )
+    // when
+    val response = sendRequest[UserBody, UserDto](
+      method = Method.POST,
+      uri = "register",
+      body = body
+    )
 
-      // then
-      response.map(_.body.value shouldBe UserDto("admin", "admin"))
-    }
+    // then
+    response.map(_.body.value shouldBe UserDto("admin"))
+  }
+
+  it should "successful login" in {
+
+    // given
+    implicit val endpoint: ServerEndpoint[Any, Future] = loginEndpoint
+    val body = UserBody("admin", "admin")
+
+    // when
+    val response = sendRequest[UserBody, AuthenticationToken](
+      method = Method.POST,
+      uri = "login",
+      body = body
+    )
+
+    // then
+    response.map(_.body.value shouldBe an[AuthenticationToken])
+  }
+
+  it should "unsuccessful login" in {
+
+    // given
+    implicit val endpoint: ServerEndpoint[Any, Future] = loginEndpoint
+    val body = UserBody("not_admin", "admin")
+
+    // when
+    lazy val response = sendRequest[UserBody, AuthenticationToken](
+      method = Method.POST,
+      uri = "login",
+      body = body
+    )
+
+    // then
+    response.map(x => x.body shouldBe a[Left[HttpError[String], AuthenticationToken]])
+  }
 }

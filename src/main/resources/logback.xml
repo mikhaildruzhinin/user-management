@@ -10,7 +10,6 @@
     <logger name="io.netty" level="INFO"/>
     <logger name="sttp.tapir" level="INFO"/>
     <logger name="sttp.tapir.server.netty.NettyFutureServerOptions$" level="DEBUG"/>
-    <logger name="ru.mikhaildruzhinin.common.Listener" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
