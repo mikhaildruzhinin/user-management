@@ -2,11 +2,11 @@ package ru.mikhaildruzhinin.usermanagement
 
 import io.circe._
 import io.circe.generic.auto._
+import io.circe.syntax._
 import org.scalatest.EitherValues
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pdi.jwt._
 import ru.mikhaildruzhinin.usermanagement.Endpoints._
 import sttp.client3._
 import sttp.client3.circe._
@@ -15,6 +15,8 @@ import sttp.model.Method
 import sttp.tapir.server._
 import sttp.tapir.server.stub.TapirStubInterpreter
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Future
 
 class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
@@ -32,12 +34,14 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
    */
   // @formatter:off
   private def sendRequest[A](method: Method,
-                             uri: String)
+                             uri: String,
+                             token: AuthenticationToken)
                             (implicit decoder: Decoder[A],
                              endpoint: ServerEndpoint[Any, Future]) = {
 
     basicRequest
       .method(method, uri"$baseUriStub/${getPathSegments(uri)}")
+      .headers(Map("Authorization" -> s"Bearer ${token.token}"))
       .response(asJson[A])
       .send(backendStub(endpoint))
   }
@@ -116,4 +120,29 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
     // then
     response.map(x => x.body shouldBe a[Left[HttpError[String], AuthenticationToken]])
   }
+
+  it should "successful test" in {
+
+    // given
+    val claim = JwtClaim(
+      expiration = Some(Instant.now.plus(10L, ChronoUnit.MINUTES).getEpochSecond),
+      issuedAt = Some(Instant.now.getEpochSecond),
+      content = UserDto("admin").asJson.noSpaces
+    )
+    val key = "changeMe"
+    val algorithm = JwtAlgorithm.HS256
+    val token = AuthenticationToken(JwtCirce.encode(claim, key, algorithm))
+    implicit val endpoint: ServerEndpoint[Any, Future] = testEndpoint
+
+    // when
+    val response = sendRequest[Message](
+      method = Method.GET,
+      uri = "test",
+      token = token
+    )
+
+    response.map(_.body.value shouldBe Message("ok"))
+  }
+
+  // TODO: unsuccessful test
 }
