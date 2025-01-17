@@ -20,6 +20,16 @@ object Endpoints {
   private val key = "changeMe"
   private val algorithm = JwtAlgorithm.HS256
 
+  private val security = (token: AuthenticationToken) => {
+    val principal = for {
+      claim <- Future.fromTry(JwtCirce.decode(token.token, key, Seq(algorithm)))
+    } yield Right(decode[UserDto](claim.content))
+
+    principal.recover { case _ =>
+      Left(ErrorMessage("Not Authorized"))
+    }
+  }
+
   val registerEndpoint: ServerEndpoint[Any, Future] = endpoint.post
     .in("register")
     .in(jsonBody[UserBody])
@@ -32,7 +42,7 @@ object Endpoints {
     .out(jsonBody[AuthenticationToken])
     .errorOut(jsonBody[ErrorMessage])
     .serverLogic(user => {
-      if (user.login == "admin") {
+      if (user.password == "admin") {
         val claim = JwtClaim(
           expiration = Some(Instant.now.plus(10L, ChronoUnit.MINUTES).getEpochSecond),
           issuedAt = Some(Instant.now.getEpochSecond),
@@ -48,15 +58,7 @@ object Endpoints {
     .out(jsonBody[Message])
     .errorOut(jsonBody[ErrorMessage])
     .securityIn(auth.bearer[String]().mapTo[AuthenticationToken])
-    .serverSecurityLogic { token =>
-      val principal = for {
-        claim <- Future.fromTry(JwtCirce.decode(token.token, key, Seq(algorithm)))
-      } yield Right(decode[UserDto](claim.content))
-
-      principal.recover { case _ =>
-        Left(ErrorMessage("Not Authorized"))
-      }
-    }
+    .serverSecurityLogic(security)
     .serverLogicSuccess(_ => _ => Future.successful(Message("ok")))
 
   private val apiEndpoints: List[ServerEndpoint[Any, Future]] = {
@@ -68,6 +70,3 @@ object Endpoints {
 
   val all: List[ServerEndpoint[Any, Future]] = apiEndpoints ++ docEndpoints
 }
-
-//    .securityIn(auth.bearer[String]().mapTo[AuthenticationToken])
-//    .serverSecurityLogic(a => Future.successful(Right(AuthenticatedUser("admin"))))

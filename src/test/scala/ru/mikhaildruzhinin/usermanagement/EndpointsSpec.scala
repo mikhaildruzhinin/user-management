@@ -29,10 +29,10 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
       .backend()
   }
 
+  // @formatter:off
   /**
    * @tparam A successful response model
    */
-  // @formatter:off
   private def sendRequest[A](method: Method,
                              uri: String,
                              token: AuthenticationToken)
@@ -108,7 +108,7 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
 
     // given
     implicit val endpoint: ServerEndpoint[Any, Future] = loginEndpoint
-    val body = UserBody("not_admin", "admin")
+    val body = UserBody("not_admin", "not_admin")
 
     // when
     lazy val response = sendRequest[UserBody, AuthenticationToken](
