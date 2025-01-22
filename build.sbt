@@ -8,6 +8,7 @@ val jwtScalaVersion = "10.0.1"
 val logbackVersion = "1.5.16"
 val scalatestVersion = "3.2.19"
 val sttpCirceVersion = "3.10.2"
+val pureconfigVersion = "0.17.8"
 
 lazy val root = (project in file("."))
   .settings(
@@ -22,6 +23,7 @@ lazy val root = (project in file("."))
       "io.circe" %% "circe-parser" % circeVersion,
       "com.github.jwt-scala" %% "jwt-core" % jwtScalaVersion,
       "com.github.jwt-scala" %% "jwt-circe" % jwtScalaVersion,
+      "com.github.pureconfig" %% "pureconfig" % pureconfigVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % tapirVersion % Test,
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
       "com.softwaremill.sttp.client3" %% "circe" % sttpCirceVersion % Test

@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 object Endpoints {
 
-  private val key = "changeMe"
+  private val key = Config().secretKey
   private val algorithm = JwtAlgorithm.HS256
 
   private val security = (token: AuthenticationToken) => {

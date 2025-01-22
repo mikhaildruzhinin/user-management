@@ -129,7 +129,7 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
       issuedAt = Some(Instant.now.getEpochSecond),
       content = UserDto("admin").asJson.noSpaces
     )
-    val key = "changeMe"
+    val key = Config().secretKey
     val algorithm = JwtAlgorithm.HS256
     val token = AuthenticationToken(JwtCirce.encode(claim, key, algorithm))
     implicit val endpoint: ServerEndpoint[Any, Future] = testEndpoint
