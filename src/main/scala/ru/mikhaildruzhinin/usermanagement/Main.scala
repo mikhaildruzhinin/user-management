@@ -12,15 +12,17 @@ object Main {
   private val log: Logger = LoggerFactory.getLogger(getClass)
 
   def main(args: Array[String]): Unit = {
+    val config = Config()
     for {
       binding <- NettyFutureServer(
         NettyFutureServerOptions.default,
         NettyConfig.default.withGracefulShutdownTimeout(Duration(5L, TimeUnit.SECONDS))
       )
-        .port(8080)
+        .host(config.host)
+        .port(config.port)
         .addEndpoints(Endpoints.all)
         .start()
-      _ = log.info(s"Go to http://localhost:${binding.port}/docs to open SwaggerUI")
+      _ = log.info(s"Go to http://${binding.localSocket.getHostString}:${binding.port}/docs to open SwaggerUI")
       _ = sys.addShutdownHook {
         log.info(s"Shutting down Netty server.")
         binding.stop()
