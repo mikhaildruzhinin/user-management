@@ -11,18 +11,23 @@ object Main {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
 
+  private val config: Config = Config()
+
+  private val startingLogMessage = (binding: NettyFutureServerBinding) => {
+    s"Go to http://${binding.localSocket.getHostString}:${binding.port}/docs to open SwaggerUI"
+  }
+
   def main(args: Array[String]): Unit = {
-    val config = Config()
     for {
       binding <- NettyFutureServer(
-        NettyFutureServerOptions.default,
+        Config.nettyFutureServerOptions,
         NettyConfig.default.withGracefulShutdownTimeout(Duration(5L, TimeUnit.SECONDS))
       )
         .host(config.host)
         .port(config.port)
         .addEndpoints(Endpoints.all)
         .start()
-      _ = log.info(s"Go to http://${binding.localSocket.getHostString}:${binding.port}/docs to open SwaggerUI")
+      _ = log.info(startingLogMessage(binding))
       _ = sys.addShutdownHook {
         log.info(s"Shutting down Netty server.")
         binding.stop()
