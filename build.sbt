@@ -1,8 +1,8 @@
 This / version := "0.1.0-SNAPSHOT"
 This / organization := "ru.mikhaildruzhinin"
-This / scalaVersion := "2.13.15"
+This / scalaVersion := "2.13.16"
 
-val tapirVersion = "1.11.12"
+val tapirVersion = "1.11.13"
 val circeVersion = "0.14.10"
 val jwtScalaVersion = "10.0.1"
 val logbackVersion = "1.5.16"
