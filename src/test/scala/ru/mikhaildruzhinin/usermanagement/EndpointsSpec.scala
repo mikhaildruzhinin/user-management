@@ -2,7 +2,7 @@ package ru.mikhaildruzhinin.usermanagement
 
 import io.circe._
 import io.circe.generic.auto._
-import io.circe.syntax._
+import io.circe.syntax.EncoderOps
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -109,7 +109,7 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
       body = body
     )
 
-    response.map(_.code shouldBe StatusCode.BadRequest)
+    response.map(_.body.left.value.getClass shouldBe classOf[HttpError[_]])
   }
 
   it should "successful test" in {
@@ -151,6 +151,6 @@ class EndpointsSpec extends AsyncFlatSpec with Matchers with EitherValues {
       token = token
     )
 
-    response.map(_.code shouldBe StatusCode.BadRequest)
+    response.map(_.body.left.value.getClass shouldBe classOf[HttpError[_]])
   }
 }
